@@ -1,0 +1,38 @@
+FROM php:7.4-fpm-alpine
+
+WORKDIR /var/www/html
+
+# Setup GD extension
+RUN apk add --no-cache \
+      freetype \
+      libjpeg-turbo \
+      libpng \
+      freetype-dev \
+      libjpeg-turbo-dev \
+      libpng-dev \
+    && docker-php-ext-configure gd \
+      --with-freetype=/usr/include/ \
+      # --with-png=/usr/include/ \ # No longer necessary as of 7.4; https://github.com/docker-library/php/pull/910#issuecomment-559383597
+      --with-jpeg=/usr/include/ \
+    && docker-php-ext-install -j$(nproc) gd \
+    && docker-php-ext-enable gd \
+    && apk del --no-cache \
+      freetype-dev \
+      libjpeg-turbo-dev \
+      libpng-dev \
+    && rm -rf /tmp/*
+
+RUN apk add libzip-dev
+
+RUN docker-php-ext-install pdo pdo_mysql zip bcmath
+
+
+# XDebug
+# This value must match the name of the 'server' created in PhpStorm for XDebug purposes
+# https://confluence.jetbrains.com/display/PhpStorm/Debugging+PHP+CLI+scripts+with+PhpStorm#DebuggingPHPCLIscriptswithPhpStorm-2.StarttheScriptwithDebuggerOptions
+ENV PHP_IDE_CONFIG "serverName=Docker"
+WORKDIR /home/wwwroot
+##</romaricp>##
+
+EXPOSE 9000
+CMD ["php-fpm"]
